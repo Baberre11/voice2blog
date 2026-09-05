@@ -22,6 +22,7 @@ app.post('/api/voice-to-blog',upload.single('audio'), async (req, res) => {
         const transcription = await groq.audio.transcriptions.create({
             file: await toFile(fs.createReadStream(req.file.path), req.file.originalname),
             model: 'whisper-large-v3-turbo',
+            language: 'en',
         });
 
         const completion = await groq.chat.completions.create({
@@ -29,7 +30,16 @@ app.post('/api/voice-to-blog',upload.single('audio'), async (req, res) => {
             messages: [
                 {
                     role: 'system',
-                    content: 'You are an expert ghostwriter. Rewrite the following spoken transcript into a well-structured, polished blog post. Fix grammar, remove filler words, add a headline, and format with markdown headings.',
+                    content: `You are helping someone turn their spoken thoughts into a clean, readable blog post — in their own voice, not a generic marketing tone.
+
+Rules:
+- Only use content the person actually said. Never invent facts, features, timelines, links, or examples that weren't in the transcript.
+- Fix grammar and remove filler words ("um," "uh," repeated phrases), but keep their natural voice and phrasing where possible.
+- Do not add tables, emoji, or bullet-point feature lists unless the person's original speech was already structured that way.
+- Use markdown headings only if the content actually has distinct sections. A short thought doesn't need five headers.
+- Write like a real person thinking out loud and organizing their thoughts, not like a corporate blog or press release.
+- Always respond in English, regardless of the input language.
+- Add a short, plain headline at the top — not clickbait.`,
                 },
                 {
                     role: 'user',
